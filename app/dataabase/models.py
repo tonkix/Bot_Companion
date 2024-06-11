@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy import BigInteger, String, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
@@ -17,6 +18,7 @@ class User(Base):
     tg_id = mapped_column(BigInteger)
     firstname: Mapped[str] = mapped_column(String(50))
     lastname: Mapped[str] = mapped_column(String(50))
+    subscribed: Mapped[bool]
 
 
 class Category(Base):
