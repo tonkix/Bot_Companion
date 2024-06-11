@@ -1,14 +1,18 @@
+import random
 from app.dataabase.models import async_session
 from app.dataabase.models import User, Category, Question
 from sqlalchemy import select
 
 
-async def set_user(tg_id, firstname, lastname):
+async def set_user(tg_id, firstname, lastname, subscribed):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
         
         if not user:
-            session.add(User(tg_id=tg_id, firstname=firstname, lastname=lastname))
+            session.add(User(tg_id=tg_id, 
+                             firstname=firstname, 
+                             lastname=lastname, 
+                             subscribed=subscribed))
             await session.commit()
 
 
@@ -31,10 +35,24 @@ async def get_categories():
     async with async_session() as session:
         return await session.scalars(select(Category))
 
+
 async def get_category_questions(category_id):
     async with async_session() as session:
         return await session.scalars(select(Question).where(Question.category == category_id))
     
+
 async def get_question(question_id):
     async with async_session() as session:
         return await session.scalar(select(Question).where(Question.id == question_id))
+
+
+async def get_subscirbed_users():
+    async with async_session() as session:
+        return await session.scalars(select(User).where(User.subscribed == 'TRUE'))
+
+
+async def get_rand_question_by_category(category_id):
+    async with async_session() as session:
+        data = await session.scalar(select(Question).where(Question.category == category_id))
+        return data
+        

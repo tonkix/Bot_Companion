@@ -1,18 +1,25 @@
+from datetime import datetime, timedelta
 from aiogram import F, Bot, Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
-
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from aiogram import types
 
 import app.keyboard as kb
 import app.dataabase.requests as rq
+from app.sched import send_message_cron
 
 
 MY_ID = '657559316'
 BOT_TOKEN = "7184261886:AAFONN2GZCnUWh_hpl4wi327EmAyk28rd7c"
-bot = Bot(token=BOT_TOKEN)
 router = Router()
+
+
+class CustomQuestion(StatesGroup):
+    tg_id = State()
+    text = State()
 
 
 '''class Register(StatesGroup):
@@ -23,7 +30,10 @@ router = Router()
 @router.message(CommandStart())
 @router.message(F.text == 'На главную')
 async def cmd_start(message: Message):
-    await rq.set_user(message.from_user.id, message.from_user.first_name, message.from_user.last_name)
+    await rq.set_user(message.from_user.id, 
+                      message.from_user.first_name, 
+                      message.from_user.last_name,
+                      False)
     await message.reply('Привет!', reply_markup=kb.main)
     await message.answer('Я - бот 2147')
     
@@ -41,6 +51,7 @@ async def categories(message: Message):
 
 @router.callback_query(F.data.startswith('user_'))
 async def categories(callback: CallbackQuery):
+    await callback.answer('Успешно!')
     await callback.message.answer('Выберите категорию', reply_markup=await kb.
                                   categories(callback.data.split('_')[1]))
 
@@ -58,15 +69,48 @@ async def category(callback: CallbackQuery):
                                                                   callback.data.split('_')[2]))
 
 @router.callback_query(F.data.startswith('question_'))
-async def question(callback: CallbackQuery):
+async def question(callback: CallbackQuery, bot: Bot, scheduler: AsyncIOScheduler):
     question_data = await rq.get_question(callback.data.split('_')[1])
     user = await rq.get_user_by_id(callback.data.split('_')[2])
     await callback.answer('Вы выбрали вопрос')
     await bot.send_message(user.tg_id, question_data.question)
+    start_hour = (datetime.now() + timedelta(hours=1)).hour
+    start_minute = (datetime.now() + timedelta(minutes=1)).minute
+        
+    scheduler.add_job(send_message_cron, trigger='cron', 
+                      hour=start_hour, minute=start_minute, 
+                      start_date=datetime.now(), 
+                      kwargs={'bot': bot,'tg_id': user.tg_id, 
+                              'message_text': question_data.question})    
+
+@router.callback_query(F.data.startswith('custom_question'))
+async def question(callback: CallbackQuery, state: FSMContext):
+    await callback.answer('Вы выбрали вопрос')    
+    user = await rq.get_user_by_id(callback.data.split('_')[2]) 
+    await callback.answer(callback.data)
+    await callback.message.answer('Введите свой вопрос')     
+    await state.update_data(tg_id=user.tg_id)
+    await state.set_state(CustomQuestion.text)
+
+
+@router.message(CustomQuestion.text)
+async def send_custom_question(message: Message, bot: Bot, state: FSMContext, scheduler: AsyncIOScheduler):    
+    #user = await rq.get_user_by_id(callback.data.split('_')[2])
+    tg_id = await state.get_data()
+    await bot.send_message(chat_id=tg_id['tg_id'], text=message.text)    
+    start_hour = (datetime.now() + timedelta(hours=1)).hour
+    start_minute = (datetime.now() + timedelta(minutes=1)).minute
+        
+    scheduler.add_job(send_message_cron, trigger='cron', 
+                      hour=start_hour, minute=start_minute, 
+                      start_date=datetime.now(), 
+                      kwargs={'bot': bot,'tg_id': tg_id, 'message_text': message.text})
+    
+    await state.clear()
 
 
 @router.message()
-async def any_reply(message: Message):
+async def any_reply(message: Message, bot: Bot):
     user = await rq.get_user_by_tg(message.from_user.id)
     await bot.forward_message(MY_ID, user.tg_id, message_id=message.message_id, 
                                                  message_thread_id=message.message_thread_id)

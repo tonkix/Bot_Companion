@@ -55,5 +55,6 @@ async def questions(category_id, user_id):
     keyboard = InlineKeyboardBuilder()
     for question in all_questions:
         keyboard.add(InlineKeyboardButton(text=question.question, callback_data=f"question_{question.id}_{user_id}"))
+    keyboard.add(InlineKeyboardButton(text='Свой вопрос', callback_data=f"custom_question_{user_id}"))
     keyboard.add(InlineKeyboardButton(text='На главную', callback_data='to_main'))
     return keyboard.adjust(1).as_markup()
