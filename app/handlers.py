@@ -5,15 +5,13 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from aiogram import types
 
 import app.keyboard as kb
 import app.dataabase.requests as rq
-from app.sched import send_message_cron
+from app.scheduler import send_message_cron
 
 
 MY_ID = '657559316'
-BOT_TOKEN = "7184261886:AAFONN2GZCnUWh_hpl4wi327EmAyk28rd7c"
 router = Router()
 
 
@@ -80,8 +78,7 @@ async def question(callback: CallbackQuery, bot: Bot, scheduler: AsyncIOSchedule
     scheduler.add_job(send_message_cron, trigger='cron', 
                       hour=start_hour, minute=start_minute, 
                       start_date=datetime.now(), 
-                      kwargs={'bot': bot,'tg_id': user.tg_id, 
-                              'message_text': question_data.question})    
+                      kwargs={'bot': bot,'tg_id': user.tg_id, 'message_text': question_data.question})    
 
 @router.callback_query(F.data.startswith('custom_question'))
 async def question(callback: CallbackQuery, state: FSMContext):
@@ -112,6 +109,7 @@ async def send_custom_question(message: Message, bot: Bot, state: FSMContext, sc
 @router.message()
 async def any_reply(message: Message, bot: Bot):
     user = await rq.get_user_by_tg(message.from_user.id)
+    await message.reply(f"Я пока не умею отвечать на такие сообщения\nХорошего дня!")
     await bot.forward_message(MY_ID, user.tg_id, message_id=message.message_id, 
                                                  message_thread_id=message.message_thread_id)
 

@@ -6,18 +6,17 @@ import logging
 
 
 from app.handlers import router
-from app.handlers import BOT_TOKEN
 from app.dataabase.models import async_main
-from app.sched import send_message_cron
-from app.sched import send_message_cron2
-from app.sched import SchedulerMiddleware
+from app.scheduler import send_message_cron_at_schedule
+from app.scheduler import SchedulerMiddleware
+
+BOT_TOKEN = "7184261886:AAFONN2GZCnUWh_hpl4wi327EmAyk28rd7c"
 
 # Инициализируем логгер
 logger = logging.getLogger(__name__)
 
 async def main():
-    await async_main()
-    
+    await async_main()   
     
     # Конфигурируем логирование
     logging.basicConfig(
@@ -27,26 +26,27 @@ async def main():
     # Выводим в консоль информацию о начале запуска
     logger.info('Starting 2147')
     
-    
     bot = Bot(token=BOT_TOKEN)
-    dp = Dispatcher()
-    
-    scheduler = AsyncIOScheduler()
-    
-    #start_hour = (datetime.now() + timedelta(hours=1)).hour
+    dp = Dispatcher()    
+    scheduler = AsyncIOScheduler()    
     start_hour = 12
-    start_minute = 00
-    
-    scheduler.add_job(send_message_cron2, trigger='cron', 
+    start_minute = 00    
+    scheduler.add_job(send_message_cron_at_schedule, trigger='cron', 
+                      hour=start_hour+4, minute=start_minute, 
+                      start_date=datetime.now(), 
+                      kwargs={'bot': bot})    
+    scheduler.add_job(send_message_cron_at_schedule, trigger='cron', 
                       hour=start_hour, minute=start_minute, 
                       start_date=datetime.now(), 
+                      kwargs={'bot': bot})  
+    scheduler.add_job(send_message_cron_at_schedule, trigger='cron', 
+                      hour=start_hour+8, minute=start_minute, 
+                      start_date=datetime.now(), 
+                      kwargs={'bot': bot})  
+    scheduler.add_job(send_message_cron_at_schedule, trigger='date',
+                      run_date=datetime.now() + timedelta(seconds=5),
                       kwargs={'bot': bot})
-    
-    scheduler.add_job(send_message_cron2, trigger='date',
-                      run_date=datetime.now() + timedelta(seconds=10),
-                      kwargs={'bot': bot})
-    scheduler.start()
-    
+    scheduler.start()    
     dp.include_router(router)
     dp.update.middleware.register(SchedulerMiddleware(scheduler))
     await dp.start_polling(bot)

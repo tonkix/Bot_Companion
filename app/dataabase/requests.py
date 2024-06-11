@@ -53,6 +53,7 @@ async def get_subscirbed_users():
 
 async def get_rand_question_by_category(category_id):
     async with async_session() as session:
-        data = await session.scalar(select(Question).where(Question.category == category_id))
-        return data
+        data = await session.scalars(select(Question).where(Question.category == category_id))
+        data = list(data)
+        return data[random.randrange(len(data))]
         

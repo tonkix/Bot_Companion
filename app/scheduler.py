@@ -22,12 +22,14 @@ class SchedulerMiddleware(BaseMiddleware):
 
 
 
-
 async def send_message_cron(bot: Bot, tg_id, message_text: str):
     await bot.send_message(tg_id, message_text)
     
-async def send_message_cron2(bot: Bot):
-    question = await rq.get_rand_question_by_category(2)
+    
+async def send_message_cron_at_schedule(bot: Bot):
     users = await rq.get_subscirbed_users()
     for user in users:
-        await bot.send_message(str(user.tg_id), f"Привет\n{question.question}")
+        question = await rq.get_rand_question_by_category(2)
+        await bot.send_message(str(user.tg_id), (f"Привет\n"
+                f"Я пока не умею отвечать, но если ты напишешь ответ, то мой создатель его получит"
+                f"\n{question.question}"))
