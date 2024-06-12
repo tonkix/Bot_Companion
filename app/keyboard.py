@@ -7,7 +7,6 @@ from app.dataabase.requests import get_all_users
 from app.dataabase.requests import get_category_questions
 
 main = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='/start')],
-                                     [KeyboardButton(text='Категории')],
                                      [KeyboardButton(text='Все пользователи')],
                                      [KeyboardButton(text='На главную')]],
                            resize_keyboard=True,

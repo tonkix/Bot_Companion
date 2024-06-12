@@ -71,8 +71,8 @@ async def question(callback: CallbackQuery, bot: Bot, scheduler: AsyncIOSchedule
     question_data = await rq.get_question(callback.data.split('_')[1])
     user = await rq.get_user_by_id(callback.data.split('_')[2])
     await callback.answer('Вы выбрали вопрос')
-    await bot.send_message(user.tg_id, question_data.question)
-    start_hour = (datetime.now() + timedelta(hours=1)).hour
+    #await bot.send_message(user.tg_id, question_data.question)
+    start_hour = (datetime.now()).hour
     start_minute = (datetime.now() + timedelta(minutes=1)).minute
         
     scheduler.add_job(send_message_cron, trigger='cron', 
@@ -94,8 +94,8 @@ async def question(callback: CallbackQuery, state: FSMContext):
 async def send_custom_question(message: Message, bot: Bot, state: FSMContext, scheduler: AsyncIOScheduler):    
     #user = await rq.get_user_by_id(callback.data.split('_')[2])
     tg_id = await state.get_data()
-    await bot.send_message(chat_id=tg_id['tg_id'], text=message.text)    
-    start_hour = (datetime.now() + timedelta(hours=1)).hour
+    #await bot.send_message(chat_id=tg_id['tg_id'], text=message.text)    
+    start_hour = (datetime.now()).hour
     start_minute = (datetime.now() + timedelta(minutes=1)).minute
         
     scheduler.add_job(send_message_cron, trigger='cron', 

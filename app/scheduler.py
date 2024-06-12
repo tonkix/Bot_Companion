@@ -33,3 +33,10 @@ async def send_message_cron_at_schedule(bot: Bot):
         await bot.send_message(str(user.tg_id), (f"Привет\n"
                 f"Я пока не умею отвечать, но если ты напишешь ответ, то мой создатель его получит"
                 f"\n{question.question}"))
+
+        
+async def send_message_cron_at_start(bot: Bot):
+    users = await rq.get_subscirbed_users()
+    for user in users:
+        await bot.send_message(str(user.tg_id), (f"Привет\n"
+                f"Бот запущен, это сообщение отправлено тем кто подписан на рассылку"))
