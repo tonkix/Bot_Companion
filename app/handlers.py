@@ -62,7 +62,7 @@ async def categories(message: Message):
 @router.callback_query(F.data.startswith('category_'))
 async def category(callback: CallbackQuery):
     await callback.answer('Вы выбрали категорию')
-    await callback.message.answer('Выберите вопрос по категории',
+    await callback.message.answer('Выберите вопрос по категории, отправлю его через минуту',
                                   reply_markup=await kb.questions(callback.data.split('_')[1], 
                                                                   callback.data.split('_')[2]))
 
@@ -85,7 +85,7 @@ async def question(callback: CallbackQuery, state: FSMContext):
     await callback.answer('Вы выбрали вопрос')    
     user = await rq.get_user_by_id(callback.data.split('_')[2]) 
     await callback.answer(callback.data)
-    await callback.message.answer('Введите свой вопрос')     
+    await callback.message.answer('Введите свой вопрос, отправлю его через минуту')     
     await state.update_data(tg_id=user.tg_id)
     await state.set_state(CustomQuestion.text)
 
