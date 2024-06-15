@@ -13,6 +13,8 @@ from app.scheduler import send_message_cron
 
 MY_ID = '657559316'
 router = Router()
+#BOT_TOKEN = "7184261886:AAFONN2GZCnUWh_hpl4wi327EmAyk28rd7c" #для запуска
+BOT_TOKEN = "6734766925:AAFiXp4efaksDf4Yx-H7EE5bfO1aX9_SmzQ" #для разработки
 
 
 class CustomQuestion(StatesGroup):
@@ -32,9 +34,21 @@ async def cmd_start(message: Message):
                       message.from_user.first_name, 
                       message.from_user.last_name,
                       False)
-    await message.reply('Привет!', reply_markup=kb.main)
-    await message.answer('Я - бот 2147')
-    
+    me = await Bot(BOT_TOKEN).get_me()
+    await message.reply(f"Привет!\nЯ - {me.first_name}", reply_markup=kb.main)
+
+
+@router.message(F.text == 'Подписаться')
+async def cmd_subscribe(message: Message):
+    await rq.set_subscribtion_state_by_id(message.from_user.id, True)
+    await message.answer('Вы подписались на расылку')
+
+
+@router.message(F.text == 'Отписаться')
+async def cmd_unsubscribe(message: Message):
+    await rq.set_subscribtion_state_by_id(message.from_user.id, False)
+    await message.answer('Вы отписались от рассылки')
+
 
 @router.callback_query(F.data == 'to_main')
 async def to_main(callback: CallbackQuery):
@@ -71,7 +85,6 @@ async def question(callback: CallbackQuery, bot: Bot, scheduler: AsyncIOSchedule
     question_data = await rq.get_question(callback.data.split('_')[1])
     user = await rq.get_user_by_id(callback.data.split('_')[2])
     await callback.answer('Вы выбрали вопрос')
-    #await bot.send_message(user.tg_id, question_data.question)
     start_hour = (datetime.now()).hour
     start_minute = (datetime.now() + timedelta(minutes=1)).minute
         
@@ -92,9 +105,7 @@ async def question(callback: CallbackQuery, state: FSMContext):
 
 @router.message(CustomQuestion.text)
 async def send_custom_question(message: Message, bot: Bot, state: FSMContext, scheduler: AsyncIOScheduler):    
-    #user = await rq.get_user_by_id(callback.data.split('_')[2])
     tg_id = await state.get_data()
-    #await bot.send_message(chat_id=tg_id['tg_id'], text=message.text)    
     start_hour = (datetime.now()).hour
     start_minute = (datetime.now() + timedelta(minutes=1)).minute
         

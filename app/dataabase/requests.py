@@ -1,7 +1,7 @@
 import random
 from app.dataabase.models import async_session
 from app.dataabase.models import User, Category, Question
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 
 async def set_user(tg_id, firstname, lastname, subscribed):
@@ -24,6 +24,13 @@ async def get_user_by_tg(tg_id):
 async def get_user_by_id(id):
     async with async_session() as session:
         return await session.scalar(select(User).where(User.id == id))
+
+
+async def set_subscribtion_state_by_id(tg_id, state):
+    async with async_session() as session:
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        user.subscribed = state
+        session.commit()
 
 
 async def get_all_users():

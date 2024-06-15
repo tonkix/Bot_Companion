@@ -6,13 +6,12 @@ import logging
 
 
 from app.handlers import router
+from app.handlers import BOT_TOKEN
 from app.dataabase.models import async_main
 from app.scheduler import send_message_cron_at_schedule
 from app.scheduler import send_message_cron_at_start
 from app.scheduler import SchedulerMiddleware
 
-#BOT_TOKEN = "7184261886:AAFONN2GZCnUWh_hpl4wi327EmAyk28rd7c" #для запуска
-BOT_TOKEN = "6734766925:AAFiXp4efaksDf4Yx-H7EE5bfO1aX9_SmzQ" #для разработки
 
 # Инициализируем логгер
 logger = logging.getLogger(__name__)
