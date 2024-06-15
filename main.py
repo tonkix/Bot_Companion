@@ -7,7 +7,7 @@ import logging
 
 from app.handlers import router
 from app.handlers import BOT_TOKEN
-from app.dataabase.models import async_main
+from app.db.models import async_main
 from app.scheduler import send_message_cron_at_schedule
 from app.scheduler import send_message_cron_at_start
 from app.scheduler import SchedulerMiddleware
@@ -45,7 +45,7 @@ async def main():
                       start_date=datetime.now(), 
                       kwargs={'bot': bot})  
     scheduler.add_job(send_message_cron_at_start, trigger='date',
-                      run_date=datetime.now() + timedelta(seconds=5),
+                      run_date=datetime.now() + timedelta(seconds=1),
                       kwargs={'bot': bot})
     scheduler.start()    
     dp.include_router(router)

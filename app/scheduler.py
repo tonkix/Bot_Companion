@@ -4,7 +4,7 @@ from aiogram import BaseMiddleware
 from aiogram.types.base import TelegramObject
 from typing import Dict, Any, Callable, Awaitable
 
-import app.dataabase.requests as rq
+import app.db.requests as rq
 
 class SchedulerMiddleware(BaseMiddleware):
 
@@ -32,7 +32,7 @@ async def send_message_cron_at_schedule(bot: Bot):
         question = await rq.get_rand_question_by_category(2)
         await bot.send_message(str(user.tg_id), (f"Привет\n"
                 f"Я пока не умею отвечать, но если ты напишешь ответ, то мой создатель его получит"
-                f"\n{question.question}"))
+                f"\n\n\n{question.question}"))
 
         
 async def send_message_cron_at_start(bot: Bot):

@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import app.keyboard as kb
-import app.dataabase.requests as rq
+import app.db.requests as rq
 from app.scheduler import send_message_cron
 
 
@@ -21,6 +21,11 @@ class CustomQuestion(StatesGroup):
     tg_id = State()
     text = State()
 
+class NewQuestion(StatesGroup):
+    password = State()
+    category_id = State()
+    text = State()
+
 
 '''class Register(StatesGroup):
     name = State()
@@ -29,25 +34,53 @@ class CustomQuestion(StatesGroup):
 
 @router.message(CommandStart())
 @router.message(F.text == 'На главную')
-async def cmd_start(message: Message):
+async def cmd_start(message: Message, bot: Bot):
     await rq.set_user(message.from_user.id, 
                       message.from_user.first_name, 
                       message.from_user.last_name,
                       False)
-    me = await Bot(BOT_TOKEN).get_me()
+    me = await bot.get_me()
     await message.reply(f"Привет!\nЯ - {me.first_name}", reply_markup=kb.main)
 
 
 @router.message(F.text == 'Подписаться')
 async def cmd_subscribe(message: Message):
-    await rq.set_subscribtion_state_by_id(message.from_user.id, True)
-    await message.answer('Вы подписались на расылку')
+    await rq.subscribe(message.from_user.id)
+    await message.answer(f"Вы подписались от рассылки")
 
 
 @router.message(F.text == 'Отписаться')
 async def cmd_unsubscribe(message: Message):
-    await rq.set_subscribtion_state_by_id(message.from_user.id, False)
-    await message.answer('Вы отписались от рассылки')
+    await rq.unsubscribe(message.from_user.id)
+    await message.answer(f"Вы отписались от рассылки")
+    
+
+@router.message(Command('add'))
+async def cmd_add_new_question(message: Message, state: FSMContext):
+    await message.answer(f"Введите пароль")
+    await state.set_state(NewQuestion.password)
+
+
+@router.message(NewQuestion.password)
+async def password_for_new_question(message: Message, state: FSMContext):     
+    await state.update_data(password=message.text)
+    await state.set_state(NewQuestion.category_id)
+    await message.answer(f"Введите id категории")
+    
+
+@router.message(NewQuestion.category_id)
+async def category_for_new_question(message: Message, state: FSMContext):     
+    await state.update_data(category_id=message.text)
+    await state.set_state(NewQuestion.text)
+    await message.answer('Введите текст вопроса')
+
+
+@router.message(NewQuestion.text)
+async def text_for_new_question(message: Message, state: FSMContext):   
+    await state.update_data(text=message.text)    
+    data = await state.get_data()
+    await rq.add_question(password=data["password"], category_id=data["category_id"], question_text=data["text"])
+    await state.clear()
 
 
 @router.callback_query(F.data == 'to_main')
