@@ -1,8 +1,9 @@
 import random
-from app.dataabase.models import async_session
-from app.dataabase.models import User, Category, Question
+from app.db.models import async_session
+from app.db.models import User, Category, Question
 from sqlalchemy import select
 
+MY_ID = '657559316'
 
 async def set_user(tg_id, firstname, lastname, subscribed):
     async with async_session() as session:
@@ -16,6 +17,10 @@ async def set_user(tg_id, firstname, lastname, subscribed):
             await session.commit()
 
 
+async def check_password(password):
+    return password == '41802967'
+
+
 async def get_user_by_tg(tg_id):
     async with async_session() as session:
         return await session.scalar(select(User).where(User.tg_id == tg_id))
@@ -25,6 +30,36 @@ async def get_user_by_id(id):
     async with async_session() as session:
         return await session.scalar(select(User).where(User.id == id))
 
+
+async def subscribe(tg_id):
+    async with async_session() as session:      
+        result = await session.execute(select(User)
+                                       .order_by(User.id)
+                                       .where(User.tg_id==tg_id)
+                                       .limit(1))
+        user = result.scalar()
+        user.subscribed = True
+        await session.commit()
+
+
+async def unsubscribe(tg_id):
+    async with async_session() as session:      
+        result = await session.execute(select(User)
+                                       .order_by(User.id)
+                                       .where(User.tg_id==tg_id)
+                                       .limit(1))
+        user = result.scalar()
+        user.subscribed = False
+        await session.commit()
+
+
+async def add_question(password, category_id, question_text):
+    async with async_session() as session:
+        if check_password(password):
+            session.add(Question(question=question_text,
+                                category=category_id))
+            await session.commit()
+        
 
 async def get_all_users():
     async with async_session() as session:
@@ -48,7 +83,7 @@ async def get_question(question_id):
 
 async def get_subscirbed_users():
     async with async_session() as session:
-        return await session.scalars(select(User).where(User.subscribed == 'TRUE'))
+        return await session.scalars(select(User).where(User.subscribed == 1))
 
 
 async def get_rand_question_by_category(category_id):

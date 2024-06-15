@@ -6,11 +6,12 @@ import logging
 
 
 from app.handlers import router
-from app.dataabase.models import async_main
+from app.handlers import BOT_TOKEN
+from app.db.models import async_main
 from app.scheduler import send_message_cron_at_schedule
+from app.scheduler import send_message_cron_at_start
 from app.scheduler import SchedulerMiddleware
 
-BOT_TOKEN = "7184261886:AAFONN2GZCnUWh_hpl4wi327EmAyk28rd7c"
 
 # Инициализируем логгер
 logger = logging.getLogger(__name__)
@@ -43,8 +44,8 @@ async def main():
                       hour=start_hour+8, minute=start_minute, 
                       start_date=datetime.now(), 
                       kwargs={'bot': bot})  
-    scheduler.add_job(send_message_cron_at_schedule, trigger='date',
-                      run_date=datetime.now() + timedelta(seconds=5),
+    scheduler.add_job(send_message_cron_at_start, trigger='date',
+                      run_date=datetime.now() + timedelta(seconds=1),
                       kwargs={'bot': bot})
     scheduler.start()    
     dp.include_router(router)

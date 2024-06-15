@@ -2,14 +2,15 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.dataabase.requests import get_categories
-from app.dataabase.requests import get_all_users
-from app.dataabase.requests import get_category_questions
+from app.db.requests import get_categories
+from app.db.requests import get_all_users
+from app.db.requests import get_category_questions
 
 main = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='/start')],
-                                     [KeyboardButton(text='Категории')],
                                      [KeyboardButton(text='Все пользователи')],
-                                     [KeyboardButton(text='На главную')]],
+                                     [KeyboardButton(text='На главную')],
+                                     [KeyboardButton(text='Подписаться'),
+                                     KeyboardButton(text='Отписаться')]],
                            resize_keyboard=True,
                            input_field_placeholder='Выберите пункт меню'                           
                            )

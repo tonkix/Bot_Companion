@@ -7,16 +7,23 @@ from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import app.keyboard as kb
-import app.dataabase.requests as rq
+import app.db.requests as rq
 from app.scheduler import send_message_cron
 
 
 MY_ID = '657559316'
 router = Router()
+#BOT_TOKEN = "7184261886:AAFONN2GZCnUWh_hpl4wi327EmAyk28rd7c" #для запуска
+BOT_TOKEN = "6734766925:AAFiXp4efaksDf4Yx-H7EE5bfO1aX9_SmzQ" #для разработки
 
 
 class CustomQuestion(StatesGroup):
     tg_id = State()
+    text = State()
+
+class NewQuestion(StatesGroup):
+    password = State()
+    category_id = State()
     text = State()
 
 
@@ -27,14 +34,54 @@ class CustomQuestion(StatesGroup):
 
 @router.message(CommandStart())
 @router.message(F.text == 'На главную')
-async def cmd_start(message: Message):
+async def cmd_start(message: Message, bot: Bot):
     await rq.set_user(message.from_user.id, 
                       message.from_user.first_name, 
                       message.from_user.last_name,
                       False)
-    await message.reply('Привет!', reply_markup=kb.main)
-    await message.answer('Я - бот 2147')
+    me = await bot.get_me()
+    await message.reply(f"Привет!\nЯ - {me.first_name}", reply_markup=kb.main)
+
+
+@router.message(F.text == 'Подписаться')
+async def cmd_subscribe(message: Message):
+    await rq.subscribe(message.from_user.id)
+    await message.answer(f"Вы подписались от рассылки")
+
+
+@router.message(F.text == 'Отписаться')
+async def cmd_unsubscribe(message: Message):
+    await rq.unsubscribe(message.from_user.id)
+    await message.answer(f"Вы отписались от рассылки")
     
+
+@router.message(Command('add'))
+async def cmd_add_new_question(message: Message, state: FSMContext):
+    await message.answer(f"Введите пароль")
+    await state.set_state(NewQuestion.password)
+
+
+@router.message(NewQuestion.password)
+async def password_for_new_question(message: Message, state: FSMContext):     
+    await state.update_data(password=message.text)
+    await state.set_state(NewQuestion.category_id)
+    await message.answer(f"Введите id категории")
+    
+
+@router.message(NewQuestion.category_id)
+async def category_for_new_question(message: Message, state: FSMContext):     
+    await state.update_data(category_id=message.text)
+    await state.set_state(NewQuestion.text)
+    await message.answer('Введите текст вопроса')
+
+
+@router.message(NewQuestion.text)
+async def text_for_new_question(message: Message, state: FSMContext):   
+    await state.update_data(text=message.text)    
+    data = await state.get_data()
+    await rq.add_question(password=data["password"], category_id=data["category_id"], question_text=data["text"])
+    await state.clear()
+
 
 @router.callback_query(F.data == 'to_main')
 async def to_main(callback: CallbackQuery):
@@ -62,7 +109,7 @@ async def categories(message: Message):
 @router.callback_query(F.data.startswith('category_'))
 async def category(callback: CallbackQuery):
     await callback.answer('Вы выбрали категорию')
-    await callback.message.answer('Выберите вопрос по категории',
+    await callback.message.answer('Выберите вопрос по категории, отправлю его через минуту',
                                   reply_markup=await kb.questions(callback.data.split('_')[1], 
                                                                   callback.data.split('_')[2]))
 
@@ -71,8 +118,7 @@ async def question(callback: CallbackQuery, bot: Bot, scheduler: AsyncIOSchedule
     question_data = await rq.get_question(callback.data.split('_')[1])
     user = await rq.get_user_by_id(callback.data.split('_')[2])
     await callback.answer('Вы выбрали вопрос')
-    await bot.send_message(user.tg_id, question_data.question)
-    start_hour = (datetime.now() + timedelta(hours=1)).hour
+    start_hour = (datetime.now()).hour
     start_minute = (datetime.now() + timedelta(minutes=1)).minute
         
     scheduler.add_job(send_message_cron, trigger='cron', 
@@ -85,17 +131,15 @@ async def question(callback: CallbackQuery, state: FSMContext):
     await callback.answer('Вы выбрали вопрос')    
     user = await rq.get_user_by_id(callback.data.split('_')[2]) 
     await callback.answer(callback.data)
-    await callback.message.answer('Введите свой вопрос')     
+    await callback.message.answer('Введите свой вопрос, отправлю его через минуту')     
     await state.update_data(tg_id=user.tg_id)
     await state.set_state(CustomQuestion.text)
 
 
 @router.message(CustomQuestion.text)
 async def send_custom_question(message: Message, bot: Bot, state: FSMContext, scheduler: AsyncIOScheduler):    
-    #user = await rq.get_user_by_id(callback.data.split('_')[2])
     tg_id = await state.get_data()
-    await bot.send_message(chat_id=tg_id['tg_id'], text=message.text)    
-    start_hour = (datetime.now() + timedelta(hours=1)).hour
+    start_hour = (datetime.now()).hour
     start_minute = (datetime.now() + timedelta(minutes=1)).minute
         
     scheduler.add_job(send_message_cron, trigger='cron', 
