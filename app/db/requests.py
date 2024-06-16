@@ -3,7 +3,6 @@ from app.db.models import async_session
 from app.db.models import User, Category, Question
 from sqlalchemy import select
 
-MY_ID = '657559316'
 
 async def set_user(tg_id, firstname, lastname, subscribed):
     async with async_session() as session:

@@ -5,16 +5,17 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from dotenv import load_dotenv
+import os
+
 
 import app.keyboard as kb
 import app.db.requests as rq
 from app.scheduler import send_message_cron
 
 
-MY_ID = '657559316'
+load_dotenv()
 router = Router()
-#BOT_TOKEN = "7184261886:AAFONN2GZCnUWh_hpl4wi327EmAyk28rd7c" #для запуска
-BOT_TOKEN = "6734766925:AAFiXp4efaksDf4Yx-H7EE5bfO1aX9_SmzQ" #для разработки
 
 
 class CustomQuestion(StatesGroup):
@@ -26,11 +27,6 @@ class NewQuestion(StatesGroup):
     category_id = State()
     text = State()
 
-
-'''class Register(StatesGroup):
-    name = State()
-    age = State()
-    number = State()'''
 
 @router.message(CommandStart())
 @router.message(F.text == 'На главную')
@@ -154,7 +150,7 @@ async def send_custom_question(message: Message, bot: Bot, state: FSMContext, sc
 async def any_reply(message: Message, bot: Bot):
     user = await rq.get_user_by_tg(message.from_user.id)
     await message.reply(f"Я пока не умею отвечать на такие сообщения\nХорошего дня!")
-    await bot.forward_message(MY_ID, user.tg_id, message_id=message.message_id, 
+    await bot.forward_message(os.getenv("MY_ID"), user.tg_id, message_id=message.message_id, 
                                                  message_thread_id=message.message_thread_id)
 
 '''

@@ -3,10 +3,12 @@ from aiogram import Bot, Dispatcher
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime, timedelta
 import logging
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
 from app.handlers import router
-from app.handlers import BOT_TOKEN
 from app.db.models import async_main
 from app.scheduler import send_message_cron_at_schedule
 from app.scheduler import send_message_cron_at_start
@@ -27,7 +29,7 @@ async def main():
     # Выводим в консоль информацию о начале запуска
     logger.info('Starting 2147')
     
-    bot = Bot(token=BOT_TOKEN)
+    bot = Bot(token=os.getenv("BOT_TOKEN"))
     dp = Dispatcher()    
     scheduler = AsyncIOScheduler()    
     start_hour = 12

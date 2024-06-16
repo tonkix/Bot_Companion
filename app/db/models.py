@@ -19,6 +19,7 @@ class User(Base):
     firstname: Mapped[str] = mapped_column(String(50))
     lastname: Mapped[str] = mapped_column(String(50))
     subscribed: Mapped[bool]
+    role: Mapped[int]
 
 
 class Category(Base):
