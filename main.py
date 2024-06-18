@@ -47,7 +47,7 @@ async def main():
                       start_date=datetime.now(), 
                       kwargs={'bot': bot})  
     scheduler.add_job(send_message_cron_at_start, trigger='date',
-                      run_date=datetime.now() + timedelta(seconds=1),
+                      run_date=datetime.now() + timedelta(seconds=1), 
                       kwargs={'bot': bot})
     scheduler.start()    
     dp.include_router(router)

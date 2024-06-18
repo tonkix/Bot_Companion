@@ -7,14 +7,16 @@ from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 import os
+#import openai
 
 
 import app.keyboard as kb
 import app.db.requests as rq
 from app.scheduler import send_message_cron
 
-
 load_dotenv()
+#openai.api_key = os.getenv('tg_bot_token_new')
+#openai.api_key = os.getenv('tg_bot_token')
 router = Router()
 
 
@@ -75,7 +77,9 @@ async def category_for_new_question(message: Message, state: FSMContext):
 async def text_for_new_question(message: Message, state: FSMContext):   
     await state.update_data(text=message.text)    
     data = await state.get_data()
-    await rq.add_question(password=data["password"], category_id=data["category_id"], question_text=data["text"])
+    await rq.add_question(password=data["password"], 
+                          category_id=data["category_id"], 
+                          question_text=data["text"])
     await state.clear()
 
 
@@ -120,7 +124,10 @@ async def question(callback: CallbackQuery, bot: Bot, scheduler: AsyncIOSchedule
     scheduler.add_job(send_message_cron, trigger='cron', 
                       hour=start_hour, minute=start_minute, 
                       start_date=datetime.now(), 
-                      kwargs={'bot': bot,'tg_id': user.tg_id, 'message_text': question_data.question})    
+                      end_date=datetime.now() + timedelta(hours=2),
+                      kwargs={'bot': bot,
+                              'tg_id': user.tg_id,
+                              'message_text': question_data.question})    
 
 @router.callback_query(F.data.startswith('custom_question'))
 async def question(callback: CallbackQuery, state: FSMContext):
@@ -133,7 +140,8 @@ async def question(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(CustomQuestion.text)
-async def send_custom_question(message: Message, bot: Bot, state: FSMContext, scheduler: AsyncIOScheduler):    
+async def send_custom_question(message: Message, bot: Bot,
+                               state: FSMContext, scheduler: AsyncIOScheduler):    
     tg_id = await state.get_data()
     start_hour = (datetime.now()).hour
     start_minute = (datetime.now() + timedelta(minutes=1)).minute
@@ -141,6 +149,7 @@ async def send_custom_question(message: Message, bot: Bot, state: FSMContext, sc
     scheduler.add_job(send_message_cron, trigger='cron', 
                       hour=start_hour, minute=start_minute, 
                       start_date=datetime.now(), 
+                      end_date=datetime.now() + timedelta(hours=2),
                       kwargs={'bot': bot,'tg_id': tg_id, 'message_text': message.text})
     
     await state.clear()
@@ -149,9 +158,30 @@ async def send_custom_question(message: Message, bot: Bot, state: FSMContext, sc
 @router.message()
 async def any_reply(message: Message, bot: Bot):
     user = await rq.get_user_by_tg(message.from_user.id)
-    await message.reply(f"Я пока не умею отвечать на такие сообщения\nХорошего дня!")
-    await bot.forward_message(os.getenv("MY_ID"), user.tg_id, message_id=message.message_id, 
-                                                 message_thread_id=message.message_thread_id)
+    #await message.reply(f"Я пока не умею отвечать на такие сообщения\nХорошего дня!")
+    '''await bot.forward_message(os.getenv("MY_ID"), user.tg_id, message_id=message.message_id, 
+                                                 message_thread_id=message.message_thread_id)'''
+    import g4f
+
+    g4f.debug.logging = False  # enable logging
+    g4f.check_version = False  # Disable automatic version checking
+    print(g4f.version)  # check version
+    print(g4f.Provider.Ails.params)  # supported args
+
+    # Automatic selection of provider
+
+    # streamed completion
+    response = g4f.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        #model="gpt-4",
+        #model=g4f.models.gpt_4,
+        provider=g4f.Provider.You,
+        api_key=os.getenv("tg_bot_token_new"),
+        messages=[{"role": "user", "content": message.text}]
+    )
+    await message.reply(response)
+
+
 
 '''
 @router.message(Command('Help'))
