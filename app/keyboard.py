@@ -15,14 +15,9 @@ main = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='/start')],
                            input_field_placeholder='Выберите пункт меню'                           
                            )
 
-
-inlineKB = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Кнопка', callback_data='button')],
-    [InlineKeyboardButton(text='Кнопка 2/1', callback_data='button21'),
-     InlineKeyboardButton(text='Кнопка 2/2', callback_data='button22')]])
-
+'''
 get_number = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='Отправить номер', request_contact=True)]],
-                           resize_keyboard=True)
+                           resize_keyboard=True)'''
 
 async def categories():
     all_categories = await get_categories()

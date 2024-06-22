@@ -1,21 +1,31 @@
 from datetime import datetime, timedelta
+import logging
 from aiogram import F, Bot, Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import logging
+from dotenv import load_dotenv
+import os
+#import openai
+
 
 import app.keyboard as kb
 import app.db.requests as rq
 from app.scheduler import send_message_cron
 
-
-MY_ID = '657559316'
+load_dotenv()
+#openai.api_key = os.getenv('tg_bot_token_new')
+#openai.api_key = os.getenv('tg_bot_token')
 router = Router()
-#BOT_TOKEN = "7184261886:AAFONN2GZCnUWh_hpl4wi327EmAyk28rd7c" #для запуска
-BOT_TOKEN = "6734766925:AAFiXp4efaksDf4Yx-H7EE5bfO1aX9_SmzQ" #для разработки
+conversation_history = {}
+
+
+async def start_context_data(user_id):
+    conversation_history[user_id].append({"role": "user", "content": "пиши на русском языке"})
+    conversation_history[user_id].append({"role": "user", "content": "пиши только по русски"})
+    conversation_history[user_id].append({"role": "user", "content": "не отвечай на английском"})
 
 
 class CustomQuestion(StatesGroup):
@@ -27,11 +37,6 @@ class NewQuestion(StatesGroup):
     category_id = State()
     text = State()
 
-
-'''class Register(StatesGroup):
-    name = State()
-    age = State()
-    number = State()'''
 
 @router.message(CommandStart())
 @router.message(F.text == 'На главную')
@@ -62,6 +67,14 @@ async def cmd_unsubscribe(message: Message):
 async def cmd_add_new_question(message: Message, state: FSMContext):
     await message.answer(f"Введите пароль")
     await state.set_state(NewQuestion.password)
+    
+
+@router.message(Command('clear'))
+async def process_clear_command(message: Message):
+    user_id = message.from_user.id
+    conversation_history[user_id] = []
+    start_context_data(user_id)
+    await message.reply("История диалога очищена.")
 
 
 @router.message(NewQuestion.password)
@@ -82,7 +95,9 @@ async def category_for_new_question(message: Message, state: FSMContext):
 async def text_for_new_question(message: Message, state: FSMContext):   
     await state.update_data(text=message.text)    
     data = await state.get_data()
-    await rq.add_question(password=data["password"], category_id=data["category_id"], question_text=data["text"])
+    await rq.add_question(password=data["password"], 
+                          category_id=data["category_id"], 
+                          question_text=data["text"])
     await state.clear()
 
 
@@ -127,7 +142,10 @@ async def question(callback: CallbackQuery, bot: Bot, scheduler: AsyncIOSchedule
     scheduler.add_job(send_message_cron, trigger='cron', 
                       hour=start_hour, minute=start_minute, 
                       start_date=datetime.now(), 
-                      kwargs={'bot': bot,'tg_id': user.tg_id, 'message_text': question_data.question})    
+                      end_date=datetime.now() + timedelta(hours=2),
+                      kwargs={'bot': bot,
+                              'tg_id': user.tg_id,
+                              'message_text': question_data.question})    
 
 @router.callback_query(F.data.startswith('custom_question'))
 async def question(callback: CallbackQuery, state: FSMContext):
@@ -140,7 +158,8 @@ async def question(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(CustomQuestion.text)
-async def send_custom_question(message: Message, bot: Bot, state: FSMContext, scheduler: AsyncIOScheduler):    
+async def send_custom_question(message: Message, bot: Bot,
+                               state: FSMContext, scheduler: AsyncIOScheduler):    
     tg_id = await state.get_data()
     start_hour = (datetime.now()).hour
     start_minute = (datetime.now() + timedelta(minutes=1)).minute
@@ -148,18 +167,78 @@ async def send_custom_question(message: Message, bot: Bot, state: FSMContext, sc
     scheduler.add_job(send_message_cron, trigger='cron', 
                       hour=start_hour, minute=start_minute, 
                       start_date=datetime.now(), 
+                      end_date=datetime.now() + timedelta(hours=2),
                       kwargs={'bot': bot,'tg_id': tg_id, 'message_text': message.text})
-    logging.info(f"{message.from_user.id} - задал вопрос -> {tg_id} -> {message.text}")
     
     await state.clear()
 
 
+def trim_history(history, max_length=4096):
+    current_length = sum(len(message["content"]) for message in history)
+    while history and current_length > max_length:
+        removed_message = history.pop(0)
+        current_length -= len(removed_message["content"])
+    return history
+
 @router.message()
 async def any_reply(message: Message, bot: Bot):
     user = await rq.get_user_by_tg(message.from_user.id)
-    await message.reply(f"Я пока не умею отвечать на такие сообщения\nХорошего дня!")
-    await bot.forward_message(MY_ID, user.tg_id, message_id=message.message_id, 
-                                                 message_thread_id=message.message_thread_id)
+    #await message.reply(f"Я пока не умею отвечать на такие сообщения\nХорошего дня!")
+    '''await bot.forward_message(os.getenv("MY_ID"), user.tg_id, message_id=message.message_id, 
+                                                 message_thread_id=message.message_thread_id)'''
+    import g4f
+    from g4f.client import AsyncClient
+    from g4f.Provider import BingCreateImages, OpenaiChat, Gemini
+    
+    
+    user_id = message.from_user.id
+    user_input = message.text
+
+    if user_id not in conversation_history:
+        conversation_history[user_id] = []        
+        start_context_data(user_id)
+
+    conversation_history[user_id].append({"role": "user", "content": user_input})
+    conversation_history[user_id] = trim_history(conversation_history[user_id])
+
+    chat_history = conversation_history[user_id]
+
+    try:
+        g4f.debug.logging = False  # enable logging
+        g4f.check_version = False  # Disable automatic version checking
+        print(g4f.version)  # check version
+        print(g4f.Provider.Ails.params)  # supported args
+        
+        client = AsyncClient(
+            api_key=os.getenv("tg_bot_token_new"),
+            provider=g4f.Provider.You,
+            #provider=OpenaiChat,
+        )
+        
+        response = await g4f.ChatCompletion.create_async(
+            model=g4f.models.default,
+            #model="gpt-3.5-turbo",
+            #model="gpt-4",
+            #model=g4f.models.gpt_4,
+            messages=chat_history,
+            provider=g4f.Provider.PerplexityLabs,
+            api_key=os.getenv("tg_bot_token_new"),
+        )
+        conversation_history[user_id].append({"role": "assistant", "content": response})
+    
+    except Exception as e:
+        print(f"{g4f.Provider.GeekGpt.__name__}:", e)
+        response = "Извините, произошла ошибка."
+    
+    
+    await message.reply(response)
+    
+
+    
+    
+
+
+
 
 '''
 @router.message(Command('Help'))
