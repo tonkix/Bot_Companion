@@ -39,10 +39,10 @@ deactivate nondestructive
 if [ "${OSTYPE:-}" = "cygwin" ] || [ "${OSTYPE:-}" = "msys" ] ; then
     # transform D:\path\to\venv to /d/path/to/venv on MSYS
     # and to /cygdrive/d/path/to/venv on Cygwin
-    export VIRTUAL_ENV=$(cygpath "C:\GitHub\tonk1x\Bot_Companion\.venv_bot")
+    export VIRTUAL_ENV=$(cygpath "E:\GitHub\Bot_Companion\.venv_companion")
 else
     # use the path as-is
-    export VIRTUAL_ENV="C:\GitHub\tonk1x\Bot_Companion\.venv_bot"
+    export VIRTUAL_ENV="E:\GitHub\Bot_Companion\.venv_companion"
 fi
 
 _OLD_VIRTUAL_PATH="$PATH"
@@ -59,9 +59,9 @@ fi
 
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
-    PS1="(.venv_bot) ${PS1:-}"
+    PS1="(.venv_companion) ${PS1:-}"
     export PS1
-    VIRTUAL_ENV_PROMPT="(.venv_bot) "
+    VIRTUAL_ENV_PROMPT="(.venv_companion) "
     export VIRTUAL_ENV_PROMPT
 fi
 

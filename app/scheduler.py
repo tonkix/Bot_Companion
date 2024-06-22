@@ -31,7 +31,6 @@ async def send_message_cron_at_schedule(bot: Bot):
     for user in users:
         question = await rq.get_rand_question_by_category(2)
         await bot.send_message(str(user.tg_id), (f"Привет\n"
-                f"Я пока не умею отвечать, но если ты напишешь ответ, то мой создатель его получит"
                 f"\n\n\n{question.question}"))
 
         

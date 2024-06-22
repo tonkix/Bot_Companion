@@ -5,6 +5,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import logging
 
 import app.keyboard as kb
 import app.db.requests as rq
@@ -46,12 +47,14 @@ async def cmd_start(message: Message, bot: Bot):
 @router.message(F.text == 'Подписаться')
 async def cmd_subscribe(message: Message):
     await rq.subscribe(message.from_user.id)
+    logging.info(f"{message.from_user.id} - пользователь подписался на рассылку")
     await message.answer(f"Вы подписались от рассылки")
 
 
 @router.message(F.text == 'Отписаться')
 async def cmd_unsubscribe(message: Message):
     await rq.unsubscribe(message.from_user.id)
+    logging.info(f"{message.from_user.id} - пользователь отписался от рассылки")
     await message.answer(f"Вы отписались от рассылки")
     
 
@@ -146,6 +149,7 @@ async def send_custom_question(message: Message, bot: Bot, state: FSMContext, sc
                       hour=start_hour, minute=start_minute, 
                       start_date=datetime.now(), 
                       kwargs={'bot': bot,'tg_id': tg_id, 'message_text': message.text})
+    logging.info(f"{message.from_user.id} - задал вопрос -> {tg_id} -> {message.text}")
     
     await state.clear()
 
