@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -15,21 +15,8 @@ main = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='/start')],
                            input_field_placeholder='Выберите пункт меню'
                            )
 
-'''
-get_number = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='Отправить номер', request_contact=True)]],
-                           resize_keyboard=True)'''
 
-
-async def categories():
-    all_categories = await get_categories()
-    keyboard = InlineKeyboardBuilder()
-    for category in all_categories:
-        keyboard.add(InlineKeyboardButton(text=category.name, callback_data=f"category_{category.id}"))
-    keyboard.add(InlineKeyboardButton(text='На главную', callback_data='to_main'))
-    return keyboard.adjust(1).as_markup()
-
-
-async def categories_for_user(user_id):
+async def categories(user_id):
     all_categories = await get_categories()
     keyboard = InlineKeyboardBuilder()
     for category in all_categories:

@@ -24,7 +24,7 @@ class User(Base):
 
 
 class Category(Base):
-    __tablename__ = 'categories_for_user'
+    __tablename__ = 'categories'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(25))

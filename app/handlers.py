@@ -6,18 +6,12 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from dotenv import load_dotenv
-import os
-# import openai
-
 
 import app.keyboard as kb
 import app.db.requests as rq
+import app.ai_chat as chat
 from app.scheduler import send_message_cron
 
-load_dotenv()
-# openai.api_key = os.getenv('tg_bot_token_new')
-# openai.api_key = os.getenv('tg_bot_token')
 router = Router()
 conversation_history = {}
 
@@ -73,8 +67,7 @@ async def cmd_add_new_question(message: Message, state: FSMContext):
 @router.message(Command('clear'))
 async def process_clear_command(message: Message):
     user_id = message.from_user.id
-    conversation_history[user_id] = []
-    await start_context_data(user_id)
+    await chat.clear_history(user_id)
     await message.reply("История диалога очищена.")
 
 
@@ -108,16 +101,11 @@ async def to_main(callback: CallbackQuery):
     await callback.message.answer('Вы вернулись на главную страницу!', reply_markup=kb.main)
 
 
-@router.message(F.text == 'Категории')
-async def categories(message: Message):
-    await message.answer('Выберите категорию', reply_markup=await kb.categories_for_user())
-
-
 @router.callback_query(F.data.startswith('user_'))
 async def categories(callback: CallbackQuery):
     await callback.answer('Успешно!')
     await callback.message.answer('Выберите категорию', reply_markup=await kb.
-                                  categories_for_user(callback.data.split('_')[1]))
+                                  categories(callback.data.split('_')[1]))
 
 
 @router.message(F.text == 'Все пользователи')
@@ -176,64 +164,11 @@ async def send_custom_question(message: Message, bot: Bot,
     await state.clear()
 
 
-def trim_history(history, max_length=4096):
-    current_length = sum(len(message["content"]) for message in history)
-    while history and current_length > max_length:
-        removed_message = history.pop(0)
-        current_length -= len(removed_message["content"])
-    return history
-
-
 @router.message()
-async def any_reply(message: Message, bot: Bot):
-    user = await rq.get_user_by_tg(message.from_user.id)
-    # await message.reply(f"Я пока не умею отвечать на такие сообщения\nХорошего дня!")
-    '''await bot.forward_message(os.getenv("MY_ID"), user.tg_id, message_id=message.message_id, 
-                                                 message_thread_id=message.message_thread_id)'''
-    import g4f
-    from g4f.client import AsyncClient
-    from g4f.Provider import BingCreateImages, OpenaiChat, Gemini
-
+async def any_reply(message: Message):
     user_id = message.from_user.id
     user_input = message.text
-
-    if user_id not in conversation_history:
-        conversation_history[user_id] = []
-        await start_context_data(user_id)
-
-    conversation_history[user_id].append({"role": "user", "content": user_input})
-    conversation_history[user_id] = trim_history(conversation_history[user_id])
-
-    chat_history = conversation_history[user_id]
-
-    try:
-        g4f.debug.logging = False  # enable logging
-        g4f.check_version = False  # Disable automatic version checking
-        print(g4f.version)  # check version
-        print(g4f.Provider.Ails.params)  # supported args
-
-        client = AsyncClient(
-            api_key=os.getenv("tg_bot_token_new"),
-            provider=g4f.Provider.You,
-            # provider=OpenaiChat,
-        )
-
-        response = await g4f.ChatCompletion.create_async(
-            model=g4f.models.default,
-            # model="gpt-3.5-turbo",
-            # model="gpt-4",
-            # model=g4f.models.gpt_4,
-            messages=chat_history,
-            provider=g4f.Provider.PerplexityLabs,
-            api_key=os.getenv("tg_bot_token_new"),
-        )
-        conversation_history[user_id].append({"role": "assistant", "content": response})
-
-    except Exception as e:
-        print(f"{g4f.Provider.GeekGpt.__name__}:", e)
-        response = "Извините, произошла ошибка."
-
-    await message.reply(response)
+    await message.reply(await chat.ask_gpt_text(user_id, user_input))
 
 
 '''
