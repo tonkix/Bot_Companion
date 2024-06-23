@@ -80,7 +80,7 @@ async def get_question(question_id):
         return await session.scalar(select(Question).where(Question.id == question_id))
 
 
-async def get_subscirbed_users():
+async def get_subscribed_users():
     async with async_session() as session:
         return await session.scalars(select(User).where(User.subscribed == 1))
 
