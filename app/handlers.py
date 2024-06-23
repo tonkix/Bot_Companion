@@ -168,7 +168,7 @@ async def send_custom_question(message: Message, bot: Bot,
 async def any_reply(message: Message):
     user_id = message.from_user.id
     user_input = message.text
-    await message.reply(await chat.ask_gpt_text(user_id, user_input))
+    await message.reply(await chat.ask_gpt3_5_text(user_id, user_input))
 
 
 '''

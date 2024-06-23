@@ -25,7 +25,7 @@ def trim_history(history, max_length=4096):
     return history
 
 
-async def ask_gpt_text(user_id, message):
+async def ask_gpt3_5_text(user_id, message):
     if user_id not in conversation_history:
         conversation_history[user_id] = []
         # await start_context_data(user_id)
