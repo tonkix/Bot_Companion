@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -10,22 +10,10 @@ main = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='/start')],
                                      [KeyboardButton(text='Все пользователи')],
                                      [KeyboardButton(text='На главную')],
                                      [KeyboardButton(text='Подписаться'),
-                                     KeyboardButton(text='Отписаться')]],
+                                      KeyboardButton(text='Отписаться')]],
                            resize_keyboard=True,
-                           input_field_placeholder='Выберите пункт меню'                           
+                           input_field_placeholder='Выберите пункт меню'
                            )
-
-'''
-get_number = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='Отправить номер', request_contact=True)]],
-                           resize_keyboard=True)'''
-
-async def categories():
-    all_categories = await get_categories()
-    keyboard = InlineKeyboardBuilder()
-    for category in all_categories:
-        keyboard.add(InlineKeyboardButton(text=category.name, callback_data=f"category_{category.id}"))
-    keyboard.add(InlineKeyboardButton(text='На главную', callback_data='to_main'))
-    return keyboard.adjust(1).as_markup()
 
 
 async def categories(user_id):
@@ -41,7 +29,8 @@ async def users():
     all_users = await get_all_users()
     keyboard = InlineKeyboardBuilder()
     for user in all_users:
-        keyboard.add(InlineKeyboardButton(text=str(user.firstname)+" "+str(user.lastname), callback_data=f"user_{user.id}"))
+        keyboard.add(
+            InlineKeyboardButton(text=str(user.firstname) + " " + str(user.lastname), callback_data=f"user_{user.id}"))
     keyboard.add(InlineKeyboardButton(text='На главную', callback_data='to_main'))
     return keyboard.adjust(1).as_markup()
 

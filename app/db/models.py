@@ -11,9 +11,10 @@ async_session = async_sessionmaker(engine)
 class Base(AsyncAttrs, DeclarativeBase):
     pass
 
+
 class User(Base):
     __tablename__ = 'users'
-    
+
     id: Mapped[int] = mapped_column(primary_key=True)
     tg_id = mapped_column(BigInteger)
     firstname: Mapped[str] = mapped_column(String(50))
@@ -24,17 +25,17 @@ class User(Base):
 
 class Category(Base):
     __tablename__ = 'categories'
-    
+
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(25))
 
 
 class Question(Base):
     __tablename__ = 'questions'
-    
-    id: Mapped[int] = mapped_column(primary_key=True)    
+
+    id: Mapped[int] = mapped_column(primary_key=True)
     question: Mapped[str] = mapped_column(String(150))
-    category: Mapped[int] = mapped_column(ForeignKey('categories.id'))
+    category: Mapped[int] = mapped_column(ForeignKey('categories_for_user.id'))
 
 
 async def async_main():
